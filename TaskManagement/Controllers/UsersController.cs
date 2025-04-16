@@ -9,9 +9,11 @@ namespace TaskManagement.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IUserService _userService;
-        public UsersController(IUserService userService)
+        private readonly ITaskService _taskService;
+        public UsersController(IUserService userService ,ITaskService taskService)
         {
             _userService = userService;
+            _taskService = taskService;
         }
 
         [HttpGet]
@@ -49,6 +51,26 @@ namespace TaskManagement.Controllers
         {
             var success = await _userService.DeleteAsync(id);
             return success ? NoContent() : NotFound();
+        }
+
+        //[HttpGet("{id}/Tasks")]
+        //public async Task<IActionResult> GetTasksByUserId(int id, [FromQuery] bool? isCompleted)
+        //{
+        //    var tasks = await _taskService.GetByUserIdAsync(id, isCompleted);
+        //    return Ok(tasks);
+        //}
+
+        [HttpGet("{id}/Tasks")]
+        public async Task<IActionResult> GetTasksByUserId(int id,[FromQuery] bool? isCompleted,[FromQuery] int? page,[FromQuery] int? pageSize)
+        {
+            if (page.HasValue && pageSize.HasValue)
+            {
+                var result = await _taskService.GetByUserIdPagedAsync(id, isCompleted, page.Value, pageSize.Value);
+                return Ok(result);
+            }
+
+            var tasks = await _taskService.GetByUserIdAsync(id, isCompleted);
+            return Ok(tasks);
         }
     }
 }

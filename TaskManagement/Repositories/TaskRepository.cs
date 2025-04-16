@@ -57,5 +57,58 @@ namespace TaskManagement.Repositories
             using var conn = new SqlConnection(_conn);
             return await conn.ExecuteAsync("DELETE FROM Tasks WHERE Id = @Id", new { Id = id }) > 0;
         }
+
+        public async Task<IEnumerable<TaskItem>> GetByUserIdAsync(int userId)
+        {
+            using var conn = new SqlConnection(_conn);
+            var sql = "SELECT * FROM Tasks WHERE UserId = @UserId";
+            return await conn.QueryAsync<TaskItem>(sql, new { UserId = userId });
+        }
+
+        public async Task<IEnumerable<TaskItem>> GetByUserIdAsync(int userId, bool? isCompleted = null)
+        {
+            using var conn = new SqlConnection(_conn);
+            var sql = "SELECT * FROM Tasks WHERE UserId = @UserId";
+
+            if (isCompleted.HasValue)
+            {
+                sql += " AND IsCompleted = @IsCompleted";
+                return await conn.QueryAsync<TaskItem>(sql, new { UserId = userId, IsCompleted = isCompleted });
+            }
+
+            return await conn.QueryAsync<TaskItem>(sql, new { UserId = userId });
+        }
+
+        public async Task<PagedResult<TaskItem>> GetByUserIdPagedAsync(int userId, bool? isCompleted, int page, int pageSize)
+        {
+            using var conn = new SqlConnection(_conn);
+            var where = "WHERE UserId = @UserId";
+            if (isCompleted.HasValue) where += " AND IsCompleted = @IsCompleted";
+
+            var countSql = $"SELECT COUNT(*) FROM Tasks {where}";
+            var querySql = $@"
+                SELECT * FROM Tasks
+                {where}
+                ORDER BY CreatedAt DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+
+            var total = await conn.ExecuteScalarAsync<int>(countSql, new { UserId = userId, IsCompleted = isCompleted });
+            var items = await conn.QueryAsync<TaskItem>(querySql, new
+            {
+                UserId = userId,
+                IsCompleted = isCompleted,
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            });
+
+            return new PagedResult<TaskItem>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
     }
 }

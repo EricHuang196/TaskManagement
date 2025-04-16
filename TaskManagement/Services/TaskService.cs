@@ -25,5 +25,20 @@ namespace TaskManagement.Services
         public Task<bool> UpdateAsync(TaskItem task) => _taskRepository.UpdateAsync(task);
 
         public Task<bool> DeleteAsync(int id) => _taskRepository.DeleteAsync(id);
+
+        public Task<IEnumerable<TaskItem>> GetByUserIdAsync(int userId)
+        {
+            return _taskRepository.GetByUserIdAsync(userId);
+        }
+
+        public Task<IEnumerable<TaskItem>> GetByUserIdAsync(int userId, bool? isCompleted = null)
+        {
+            return _taskRepository.GetByUserIdAsync(userId, isCompleted);
+        }
+
+        public Task<PagedResult<TaskItem>> GetByUserIdPagedAsync(int userId, bool? isCompleted, int page, int pageSize)
+        {
+            return _taskRepository.GetByUserIdPagedAsync(userId, isCompleted, page, pageSize);
+        }
     }
 }
